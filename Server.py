@@ -5,7 +5,6 @@ The Python Class that implements the server
 import socket
 import threading
 from threading import Thread
-import hashlib
 from Protocol import *
 
 # Socket Constants
@@ -76,7 +75,6 @@ class Server:
                             # Get Range
                             cores = int(data)
                             start, end = self.get_range(cores)
-
                             if start != 0 or end != 0:
                                 # Send Response
                                 response_command = 'Job'
@@ -87,13 +85,13 @@ class Server:
                                 protocol_send(client_socket, response_command, response_data)
                             else:
                                 # No more work
-                                protocol_send(client_socket, 'Job', '0000000000' * 2)
+                                protocol_send(client_socket, 'Job', ('0' * STR_LENGTH) * 2)
                                 break
                         case 'Res':
                             if data[:5] == 'found':
                                 with self.lock:
                                     self.found = True
-                                    self.decrypted_str = data[5:]
+                                    self.decrypted_str = data[5:].zfill(STR_LENGTH)
                             if data[:5] == 'notfd':
                                 pass
                 except socket.timeout:
@@ -113,7 +111,7 @@ class Server:
 
     def get_range(self, cores):
         with self.lock:
-            if self.start < 10 ** (STR_LENGTH + 1):
+            if self.start < 10 ** STR_LENGTH:
                 start = self.start
                 end = start + cores * WORK_PER_CORE - 1
                 if end > 10 ** (STR_LENGTH + 1) - 1:
