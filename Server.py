@@ -19,14 +19,14 @@ STR_LENGTH = 10
 
 
 class Server:
-    def __init__(self, encrypted_str):
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.threads = []
-        self.start = 0
-        self.found = False
-        self.encrypted_str = encrypted_str
-        self.decrypted_str = ''
-        self.lock = threading.Lock()
+    def __init__(self, encrypted_str: str):
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # The Server Socket
+        self.threads = []  # Threads list
+        self.start = 0  # Start value for next client request
+        self.found = False  # Value found flag
+        self.encrypted_str = encrypted_str  # String to decrypt
+        self.decrypted_str = ''  # The decrypted string
+        self.lock = threading.Lock()  # Synchronization Lock
         self.no_more_work = False  # Tracks if all ranges have been assigned
         self.active_clients = 0  # Track active clients processing ranges
 
@@ -43,6 +43,8 @@ class Server:
                     client_socket, addr = self.server_socket.accept()
                     with self.lock:
                         self.active_clients += 1  # Increment active clients
+
+                    # Start Client Thread
                     thread = Thread(target=self.handle_client, args=(client_socket,))
                     thread.start()
                     self.threads.append(thread)
@@ -55,16 +57,19 @@ class Server:
             for thread in self.threads:
                 thread.join(timeout=5)
 
-            self.server_socket.close()
+            self.server_socket.close()  # Closing Server Socket
 
             if not self.found:
                 print("No decryption result found.")
+            else:
+                print("Decryption result found")
             return self.decrypted_str
 
-    def handle_client(self, client_socket):
+    def handle_client(self, client_socket: socket):
         try:
             while not self.found:
                 try:
+                    # Receive Data
                     cmd, data = protocol_receive(client_socket)
 
                     if cmd is None:  # Detect client disconnection
@@ -75,7 +80,7 @@ class Server:
                             # Get Range
                             cores = int(data)
                             start, end = self.get_range(cores)
-                            if start != 0 or end != 0:
+                            if not self.no_more_work:
                                 # Send Response
                                 response_command = 'Job'
 
@@ -109,7 +114,7 @@ class Server:
                 with self.lock:
                     self.active_clients -= 1
 
-    def get_range(self, cores):
+    def get_range(self, cores: int):
         with self.lock:
             if self.start < 10 ** STR_LENGTH:
                 start = self.start
@@ -122,3 +127,14 @@ class Server:
                 end = 0
                 self.no_more_work = True
         return start, end
+
+
+if __name__ == '__main__':
+    server = Server('ec9c0f7edcc18a98b1f31853b1813301')
+    decrypted_string = server.start_decryption()
+    print(server.start_decryption())
+
+    # Asserts after the server runs
+    assert isinstance(decrypted_string, str), "Decrypted result should be a string"
+    assert len(decrypted_string) == STR_LENGTH, f"Decrypted string should have length {STR_LENGTH}"
+    print("All assertions passed.")

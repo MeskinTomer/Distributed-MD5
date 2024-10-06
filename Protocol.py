@@ -1,3 +1,7 @@
+"""
+The Protocol used for communication
+"""
+
 import socket
 
 
@@ -14,6 +18,8 @@ def protocol_send(target_socket, command, data):
 def protocol_receive(target_socket: socket):
     # Receiving Packet
     cmd = target_socket.recv(3).decode()
+
+    # Handing Packet
     data_length = int(target_socket.recv(3).decode())
     data = target_socket.recv(data_length).decode()
     return cmd, data

@@ -2,6 +2,7 @@
 The Python Class that implements the server
 """
 
+# Imports
 import socket
 import threading
 from threading import Thread
@@ -20,14 +21,14 @@ STR_LENGTH = 10
 
 
 class Client:
-    def __init__(self, cores):
-        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.threads = []
-        self.found = False
-        self.no_work = False
-        self.lock = threading.Lock()
-        self.cores = cores
-        self.decrypted_message = ''
+    def __init__(self, cores: int):
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # The Client Socket
+        self.threads = []  # Threads list
+        self.found = False  # Value found flag
+        self.no_work = False  # Flag - all ranges have been assigned
+        self.lock = threading.Lock()  # Synchronization Lock
+        self.cores = cores  # Amount of the computer's cores
+        self.decrypted_message = ''  # The decrypted string
 
     def start_decryption(self):
         try:
@@ -70,15 +71,11 @@ class Client:
         finally:
             self.client_socket.close()
 
-    def decrypt_md5(self, start, end, encrypted_message):
+    def decrypt_md5(self, start: int, end: int, encrypted_message: str):
         for num in range(start, end):
             cur_num = str(num).zfill(STR_LENGTH)
             cur_num_md5 = hashlib.md5(cur_num.encode())
             cur_num_hex = cur_num_md5.hexdigest()
-
-            if num == 342:
-                print(str(cur_num_hex))
-                print(encrypted_message)
 
             if cur_num_hex == encrypted_message:
                 with self.lock:
@@ -91,4 +88,15 @@ class Client:
             print(f'Original Num not in range: {start} - {end}')
 
 
+if __name__ == '__main__':
+    client = Client(4)
+    client.start_decryption()
 
+    # Asserts after decryption
+    if client.found:
+        assert client.decrypted_message.isdigit(), "Decrypted message should be a numeric string"
+        assert len(client.decrypted_message) == STR_LENGTH, f"Decrypted message should have length {STR_LENGTH}"
+        print("Decryption successful:", client.decrypted_message)
+    else:
+        assert client.no_work, "Client should only stop if no work is available"
+        print("No decryption result found")
