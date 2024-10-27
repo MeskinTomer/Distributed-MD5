@@ -6,6 +6,7 @@ import socket
 import threading
 from threading import Thread
 from Protocol import *
+import logging
 
 # Socket Constants
 QUEUE_SIZE = 1
@@ -14,8 +15,10 @@ PORT = 1779
 SOCKET_TIMEOUT = 2
 
 # Decryption Constants
-WORK_PER_CORE = 1000000
+WORK_PER_CORE = 10000000
 STR_LENGTH = 10
+
+logging.basicConfig(filename='Server.log', level=logging.DEBUG)
 
 
 class Server:
@@ -51,7 +54,7 @@ class Server:
                 except socket.timeout:
                     pass
         except socket.error as err:
-            print('received socket exception - ' + str(err))
+            logging.error('received socket exception - ' + str(err))
         finally:
             # Thread joining
             for thread in self.threads:
@@ -60,9 +63,9 @@ class Server:
             self.server_socket.close()  # Closing Server Socket
 
             if not self.found:
-                print("No decryption result found.")
+                logging.debug("No decryption result found.")
             else:
-                print("Decryption result found")
+                logging.debug("Decryption result found")
             return self.decrypted_str
 
     def handle_client(self, client_socket: socket):
@@ -102,13 +105,13 @@ class Server:
                 except socket.timeout:
                     pass
         except (ConnectionResetError, BrokenPipeError) as err:
-            print("Client disconnected unexpectedly - " + err)
+            logging.error("Client disconnected unexpectedly - " + err)
         finally:
             # Decrement active clients once this client is done
             try:
                 client_socket.close()
             except Exception as e:
-                print(f"Error closing client socket: {e}")
+                logging.error(f"Error closing client socket: {e}")
             finally:
                 # Decrement active clients once this client is done
                 with self.lock:
@@ -137,4 +140,4 @@ if __name__ == '__main__':
     # Asserts after the server runs
     assert isinstance(decrypted_string, str), "Decrypted result should be a string"
     assert len(decrypted_string) == STR_LENGTH, f"Decrypted string should have length {STR_LENGTH}"
-    print("All assertions passed.")
+    logging.debug("All assertions passed.")

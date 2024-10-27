@@ -8,6 +8,7 @@ import threading
 from threading import Thread
 from Protocol import *
 import hashlib
+import logging
 
 # Socket Constants
 QUEUE_SIZE = 1
@@ -16,8 +17,10 @@ PORT = 1779
 SOCKET_TIMEOUT = 2
 
 # Decryption Constants
-WORK_PER_CORE = 1000000
+WORK_PER_CORE = 10000000
 STR_LENGTH = 10
+
+logging.basicConfig(filename='Client.log', level=logging.DEBUG)
 
 
 class Client:
@@ -67,7 +70,7 @@ class Client:
                     self.no_work = True
 
         except socket.error as error:
-            print('received socket error: ' + str(error))
+            logging.error('received socket error: ' + str(error))
         finally:
             self.client_socket.close()
 
@@ -81,11 +84,11 @@ class Client:
                 with self.lock:
                     self.found = True
                     self.decrypted_message = str(num)
-                print(f'Found original: {cur_num}')
+                logging.debug(f'Found original: {cur_num}')
                 break
 
         if not self.found:
-            print(f'Original Num not in range: {start} - {end}')
+            logging.debug(f'Original Num not in range: {start} - {end}')
 
 
 if __name__ == '__main__':
@@ -96,7 +99,7 @@ if __name__ == '__main__':
     if client.found:
         assert client.decrypted_message.isdigit(), "Decrypted message should be a numeric string"
         assert len(client.decrypted_message) == STR_LENGTH, f"Decrypted message should have length {STR_LENGTH}"
-        print("Decryption successful:", client.decrypted_message)
+        logging.debug("Decryption successful:", client.decrypted_message)
     else:
         assert client.no_work, "Client should only stop if no work is available"
-        print("No decryption result found")
+        logging.debug("No decryption result found")
